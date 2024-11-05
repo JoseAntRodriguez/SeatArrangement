@@ -1,2 +1,5 @@
 .csv
 .dzn
+__pycache__
+Instances/
+generateInstances.py
