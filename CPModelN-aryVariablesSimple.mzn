@@ -1,8 +1,9 @@
-include "alldifferent.mzn"; 
-include "valuations9Binary.dzn";
-include "seatGraph9Cycle2.dzn";
+include "alldifferent.mzn";
 
+int:k;
 set of int:n = 0..(k-1);
+array[n,n] of int: V;
+array[n,n] of int: G;
 
 array[n] of var n:p;%permutation
 constraint alldifferent(p);

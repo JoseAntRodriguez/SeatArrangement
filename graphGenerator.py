@@ -108,7 +108,7 @@ def main(n, filename, options):
             f.write(line)
     
     with open(filename+'.dzn', 'w') as f:
-        f.write('array[n,n] of int: G = array2d(n,n,[')
+        f.write('G = array2d(n,n,[')
         for i in range(n):
             line = ''
             for j in range(n):
@@ -131,7 +131,7 @@ def main(n, filename, options):
                 f.write(line)
         
         with open(filename+'Alternative.dzn', 'w') as f:
-            f.write('array[n,0..1] of int: G = array2d(n,0..1,[')
+            f.write('G = array2d(n,0..1,[')
             for i in range(n):
                 line = ''
                 for j in range(2):

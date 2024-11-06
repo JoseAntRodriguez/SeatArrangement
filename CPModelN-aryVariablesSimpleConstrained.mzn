@@ -1,8 +1,9 @@
 include "alldifferent.mzn"; 
-include "valuations30Binary.dzn";
-include "seatGraph30CycleAlternative.dzn";
 
+int:k;
 set of int:n = 0..(k-1);
+array[n,n] of int: V;
+array[n,n] of int: G;
 
 %array[n] of var n:p;%permutation
 array[n] of var n:q;

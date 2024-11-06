@@ -45,8 +45,8 @@ def main(n, filename, options):
             f.write(line)
     
     with open(filename+'.dzn', 'w') as f:
-        f.write('int:k='+str(n)+';\n')
-        f.write('array[n,n] of int: V = array2d(n,n,[')
+        f.write('k='+str(n)+';\n')
+        f.write('V = array2d(n,n,[')
         for i in range(n):
             line = ''
             for j in range(n):

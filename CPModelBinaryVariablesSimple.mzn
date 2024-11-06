@@ -1,7 +1,7 @@
-include "valuations9Binary2.dzn";
-include "seatGraph9.dzn";
-
+int:k;
 set of int:n = 0..(k-1);
+array[n,n] of int: V;
+array[n,n] of int: G;
 
 array[n,n] of var 0..1:x;
 constraint forall(p in n)(sum(u in n)(x[p,u]) = 1);
