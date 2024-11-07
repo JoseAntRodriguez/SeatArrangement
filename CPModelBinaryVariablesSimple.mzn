@@ -13,4 +13,3 @@ constraint forall(p in n, q in n, u in n, v in n) (y[p,q,u,v] == if x[p,u] + x[q
 function var int: utility(int: p) = sum(q in n, u in n, v in n)(y[p,q,u,v]*V[p,q]);
 
 solve ::int_search(x, first_fail, indomain_min) maximize sum([utility(p) | p in n]);
-output "";

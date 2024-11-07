@@ -12,4 +12,3 @@ function var int: utilityAtVertex(int: p, int: u) = sum(q in n, v in n)(x[q,v]*V
 function var int: utility(int: p) = sum(u in n)(utilityAtVertex(p,u)*x[p,u]);
 
 solve ::int_search(x, first_fail, indomain_min) maximize sum([utility(p) | p in n]);
-output "";
