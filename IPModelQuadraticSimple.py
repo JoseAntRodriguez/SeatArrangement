@@ -83,6 +83,7 @@ def IPModelQuadraticSimple(valFile, seatFile):
     output['Build time'] = start_build_time
     output['Solve time'] = start_solve_time
     output['Objective'] = totalUtility
+    output['Nodes'] = model.nodeCount
     return output
 
 if __name__ == '__main__':

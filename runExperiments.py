@@ -61,10 +61,9 @@ def writeFile(models, filename, data, instancesNumber):
                 else:
                     line += '\n'
             f.write(line)
-        f.write(content)
 
-seatGraphDirectory = 'Instances/GraphSmall/'
-valuationsDirectory = 'Instances/ValSmall/'
+seatGraphDirectory = 'Instances/ArbitraryGraphs/'
+valuationsDirectory = 'Instances/ArbitraryValuations/'
 resultsDirectory = 'Results/'
 models = ['bruteForce','IP4Subscripts','IPQuadratic','CPN-ary','CP4Subscripts','CPQuadratic']
 
@@ -99,15 +98,16 @@ for size in sizes:
         solveTimeDict[model] = []
     nodesDict = {}
     for model in models:
-        if 'CP' in model:
+        if 'CP' in model or 'IP' in model:
             nodesDict[model] = []
     peakDepthDict = {}
     for model in models:
         if 'CP' in model:
             peakDepthDict[model] = []
     
-    for i in range(len(valuationsFilesSizeCSV)):
+    for i in range(len(seatGraphFilesSizeCSV)):
         for j in range(len(valuationsFilesSizeCSV)):
+            print('Instance number', i*len(seatGraphFilesSizeCSV) + j + 1, 'of size', size)
             for model in models:
                 output = {}
                 if model == 'bruteForce':
@@ -125,10 +125,11 @@ for size in sizes:
                 totalTimeDict[model].append(output['Total time'])
                 buildTimeDict[model].append(output['Build time'])
                 solveTimeDict[model].append(output['Solve time'])
-                if 'CP' in model:
+                if 'CP' in model or 'IP' in model:
                     nodesDict[model].append(output['Nodes'])
+                if 'CP' in model:
                     peakDepthDict[model].append(output['Peak depth'])
-                if len(objectiveArray) < 10*(i+1) + (j+1):
+                if len(objectiveArray) < len(seatGraphFilesSizeCSV)*i + (j+1):
                     objectiveArray.append(output['Objective'])
     
     objectiveFilename = 'Results_'+size+'_ObjectiveValue_MWA_S.csv'
@@ -149,10 +150,10 @@ for size in sizes:
     solveTimeFilename = resultsDirectory+'Results_'+size+'_SolveTime_MWA_S.csv'
     writeFile(models, solveTimeFilename, solveTimeDict, instancesNumber)
 
-    cpModels = [model for model in models if 'CP' in models]
-
+    cpIpModels = [model for model in models if 'CP' in model or 'IP' in model]
     nodesFilename = resultsDirectory+'Results_'+size+'_Nodes_MWA_S.csv'
-    writeFile(cpModels, nodesFilename, nodesDict, instancesNumber)
+    writeFile(cpIpModels, nodesFilename, nodesDict, instancesNumber)
 
+    cpModels = [model for model in models if 'CP' in model]
     peakDepthFilename = resultsDirectory+'Results_'+size+'_PeakDepth_MWA_S.csv'
     writeFile(cpModels, peakDepthFilename, peakDepthDict, instancesNumber)

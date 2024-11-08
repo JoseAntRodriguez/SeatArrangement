@@ -87,7 +87,7 @@ def bruteForce(valFile, seatFile):
     output['Total time'] = start_total_time
     output['Build time'] = 0
     output['Solve time'] = start_total_time
-    output['Objective'] = totalUtility
+    output['Objective'] = int(totalUtility)
     return output
 
 if __name__ == '__main__':
