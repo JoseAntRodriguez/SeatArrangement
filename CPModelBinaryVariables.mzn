@@ -2,8 +2,8 @@ int:k;
 set of int:n = 0..(k-1);
 array[n,n] of int: V;
 array[n,n] of int: G;
-int: uType = 3; % 1 if S-utility, 2 if B-utility, 3 if W-utility
-int: objective = 1; % 1 if MWA, 2 if MUA, 3 if EFA, 4 if STA
+int: uType; % 1 if S-utility, 2 if B-utility, 3 if W-utility
+int: objective; % 1 if MWA, 2 if MUA, 3 if EFA, 4 if STA
 int: minVal = min(p in n, q in n)(V[p,q]);
 int: maxVal = max(p in n, q in n)(V[p,q]);
 
