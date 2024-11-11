@@ -1,5 +1,3 @@
-include "valuationsSmall2.dzn";
-include "seatGraphSmall2.dzn";
 int:k;
 set of int:n = 0..(k-1);
 array[n,n] of int: V;
