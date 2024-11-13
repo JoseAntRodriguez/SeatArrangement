@@ -76,33 +76,31 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
     for p in range(n):
         for u in range(n):
             if utilityType == 'B':
-                for u in range(n):
-                    neighbours = getNeighbours(u,n,seatGraph)
-                    z_p = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_p")
-                    for v in range(len(neighbours)):
-                        totalSum = 0
-                        for q in range(n):
-                            totalSum += valuations[p][q]*x[q,neighbours[v]]
-                        model.addConstr(z_p[v] == totalSum)
-                    y_p = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_p")
-                    model.addConstrs(y_p[v] >= 1-(uv[p,u]-z_p[v]) for v in range(len(neighbours)))
-                    model.addConstrs(y_p[v] <= 1-(uv[p,u]-z_p[v])/(2*absMaxValuation) for v in range(len(neighbours)))
-                    model.addConstrs(uv[p,u] >= z_p[v] for v in range(len(neighbours)))
-                    model.addConstr(y_p.sum(v for v in range(len(neighbours))) >= 1)
+                neighbours = getNeighbours(u,n,seatGraph)
+                z_p = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_p")
+                for v in range(len(neighbours)):
+                    totalSum = 0
+                    for q in range(n):
+                        totalSum += valuations[p][q]*x[q,neighbours[v]]
+                    model.addConstr(z_p[v] == totalSum)
+                y_p = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_p")
+                model.addConstrs(y_p[v] >= 1-(uv[p,u]-z_p[v]) for v in range(len(neighbours)))
+                model.addConstrs(y_p[v] <= 1-(uv[p,u]-z_p[v])/(2*absMaxValuation) for v in range(len(neighbours)))
+                model.addConstrs(uv[p,u] >= z_p[v] for v in range(len(neighbours)))
+                model.addConstr(y_p.sum(v for v in range(len(neighbours))) >= 1)
             elif utilityType == 'W':
-                for u in range(n):
-                    neighbours = getNeighbours(u,n,seatGraph)
-                    z_p = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_p")
-                    for v in range(len(neighbours)):
-                        totalSum = 0
-                        for q in range(n):
-                            totalSum += valuations[p][q]*x[q,neighbours[v]]
-                        model.addConstr(z_p[v] == totalSum)
-                    y_p = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_p")
-                    model.addConstrs(y_p[v] >= 1-(z_p[v]-uv[p,u]) for v in range(len(neighbours)))
-                    model.addConstrs(y_p[v] <= 1-(z_p[v]-uv[p,u])/(2*absMaxValuation) for v in range(len(neighbours)))
-                    model.addConstrs(uv[p,u] <= z_p[v] for v in range(len(neighbours)))
-                    model.addConstr(y_p.sum(v for v in range(len(neighbours))) >= 1)
+                neighbours = getNeighbours(u,n,seatGraph)
+                z_p = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_p")
+                for v in range(len(neighbours)):
+                    totalSum = 0
+                    for q in range(n):
+                        totalSum += valuations[p][q]*x[q,neighbours[v]]
+                    model.addConstr(z_p[v] == totalSum)
+                y_p = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_p")
+                model.addConstrs(y_p[v] >= 1-(z_p[v]-uv[p,u]) for v in range(len(neighbours)))
+                model.addConstrs(y_p[v] <= 1-(z_p[v]-uv[p,u])/(2*absMaxValuation) for v in range(len(neighbours)))
+                model.addConstrs(uv[p,u] <= z_p[v] for v in range(len(neighbours)))
+                model.addConstr(y_p.sum(v for v in range(len(neighbours))) >= 1)
             else: # S-utility
                 utility = 0
                 for v in range(n):
@@ -115,9 +113,46 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
         model.addConstr(util[p] == sum(uv[p,u]*x[p,u] for u in range(n)))
 
     def envyFreenessStability(p,q):
-        exchange_p = model.addVars(n, vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name="exchange_p")
-        if utilityType == 'B' or utilityType == 'W':
-            pass
+        exchange_p = model.addVars(n, vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name="exchange_p-"+str(p)+"-"+str(q))
+        exchange_p_util = model.addVar(vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name='exchange_p_util')
+        if utilityType == 'B':
+            for u in range(n):
+                neighbours = getNeighbours(u,n,seatGraph)
+                z_p_exchange = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_p_exchange")
+                for v in range(len(neighbours)):
+                    utility_v = 0
+                    for r in range(n):
+                        if r == q:
+                            utility_v += x[p,neighbours[v]]*valuations[p][q]
+                        elif r == p:
+                            utility_v += 0
+                        else:
+                            utility_v += x[r,neighbours[v]]*valuations[p][r]
+                    model.addConstr(z_p_exchange[v] == utility_v)
+                y_p_exchange = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_p_exchange")
+                model.addConstrs(y_p_exchange[v] >= 1-(exchange_p[u]-z_p_exchange[v]) for v in range(len(neighbours)))
+                model.addConstrs(y_p_exchange[v] <= 1-(exchange_p[u]-z_p_exchange[v])/(2*absMaxValuation) for v in range(len(neighbours)))
+                model.addConstrs(exchange_p[u] >= z_p_exchange[v] for v in range(len(neighbours)))
+                model.addConstr(y_p_exchange.sum(v for v in range(len(neighbours))) >= 1)
+        elif utilityType == 'W':
+            for u in range(n):
+                neighbours = getNeighbours(u,n,seatGraph)
+                z_p_exchange = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_p_exchange")
+                for v in range(len(neighbours)):
+                    utility_v = 0
+                    for r in range(n):
+                        if r == q:
+                            utility_v += x[p,neighbours[v]]*valuations[p][q]
+                        elif r == p:
+                            utility_v += 0
+                        else:
+                            utility_v += x[r,neighbours[v]]*valuations[p][r]
+                    model.addConstr(z_p_exchange[v] == utility_v)
+                y_p_exchange = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_p_exchange")
+                model.addConstrs(y_p_exchange[v] >= 1-(z_p_exchange[v]-exchange_p[u]) for v in range(len(neighbours)))
+                model.addConstrs(y_p_exchange[v] <= 1-(z_p_exchange[v]-exchange_p[u])/(2*absMaxValuation) for v in range(len(neighbours)))
+                model.addConstrs(exchange_p[u] <= z_p_exchange[v] for v in range(len(neighbours)))
+                model.addConstr(y_p_exchange.sum(v for v in range(len(neighbours))) >= 1)
         else: # S-utility
             for u in range(n):
                 utility_v = 0
@@ -130,13 +165,47 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
                         else:
                             utility_v += x[r,v]*valuations[p][r]*seatGraph[u][v]
                 model.addConstr(exchange_p[u] == utility_v)
-                #exchange_p[u] = utility_v
-        exchange_p_util = sum(exchange_p[u]*x[q,u] for u in range(n))
-        #exchange_p_util = model.addVar(vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name="exchange_p_util")
-        #model.addConstr(exchange_p_util == sum(exchange_p[u]*x[q,u] for u in range(n)))
+        model.addConstr(exchange_p_util == sum(exchange_p[u]*x[q,u] for u in range(n)))
         exchange_q = model.addVars(n, vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name="exchange_q")
-        if utilityType == 'B' or utilityType == 'W':
-            pass
+        exchange_q_util = model.addVar(vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name='exchange_q_util')
+        if utilityType == 'B':
+            for u in range(n):
+                neighbours = getNeighbours(u,n,seatGraph)
+                z_q_exchange = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_q_exchange")
+                for v in range(len(neighbours)):
+                    utility_v = 0
+                    for r in range(n):
+                        if r == p:
+                            utility_v += x[q,neighbours[v]]*valuations[q][p]
+                        elif r == q:
+                            utility_v += 0
+                        else:
+                            utility_v += x[r,neighbours[v]]*valuations[q][r]
+                    model.addConstr(z_q_exchange[v] == utility_v)
+                y_q_exchange = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_q_exchange")
+                model.addConstrs(y_q_exchange[v] >= 1-(exchange_q[u]-z_q_exchange[v]) for v in range(len(neighbours)))
+                model.addConstrs(y_q_exchange[v] <= 1-(exchange_q[u]-z_q_exchange[v])/(2*absMaxValuation) for v in range(len(neighbours)))
+                model.addConstrs(exchange_q[u] >= z_q_exchange[v] for v in range(len(neighbours)))
+                model.addConstr(y_q_exchange.sum(v for v in range(len(neighbours))) >= 1)
+        elif utilityType == 'W':
+            for u in range(n):
+                neighbours = getNeighbours(u,n,seatGraph)
+                z_q_exchange = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_q_exchange")
+                for v in range(len(neighbours)):
+                    utility_v = 0
+                    for r in range(n):
+                        if r == p:
+                            utility_v += x[q,neighbours[v]]*valuations[q][p]
+                        elif r == q:
+                            utility_v += 0
+                        else:
+                            utility_v += x[r,neighbours[v]]*valuations[q][r]
+                    model.addConstr(z_q_exchange[v] == utility_v)
+                y_q_exchange = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_q_exchange")
+                model.addConstrs(y_q_exchange[v] >= 1-(z_q_exchange[v]-exchange_q[u]) for v in range(len(neighbours)))
+                model.addConstrs(y_q_exchange[v] <= 1-(z_q_exchange[v]-exchange_q[u])/(2*absMaxValuation) for v in range(len(neighbours)))
+                model.addConstrs(exchange_q[u] <= z_q_exchange[v] for v in range(len(neighbours)))
+                model.addConstr(y_q_exchange.sum(v for v in range(len(neighbours))) >= 1)
         else: # S-utility
             for u in range(n):
                 utility_v = 0
@@ -149,20 +218,17 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
                         else:
                             utility_v += x[r,v]*valuations[q][r]*seatGraph[u][v]
                 model.addConstr(exchange_q[u] == utility_v)
-                #exchange_q[u] = utility_v
-        exchange_q_util = sum(exchange_q[u]*x[p,u] for u in range(n))
-        #exchange_q_util = model.addVar(vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name="exchange_q_util")
-        #model.addConstr(exchange_q_util == sum(exchange_q[u]*x[p,u] for u in range(n)))
+        model.addConstr(exchange_q_util == sum(exchange_q[u]*x[p,u] for u in range(n)))
         if objective == 'EFA':
             model.addConstr(exchange_p_util <= util[p])
             model.addConstr(exchange_q_util <= util[q])
         else: #STA
             e_p = model.addVar(vtype=GRB.BINARY, name="e_p")
-            model.addConstr(e_p >= (exchange_p_util - util[p])/absMaxutility)
-            model.addConstr(e_p <= 1 - (util[p] - exchange_p_util - epsilon)/absMaxutility)
+            model.addConstr(e_p >= (exchange_p_util - util[p])/(2*absMaxutility))
+            model.addConstr(e_p <= 1 - (util[p] - exchange_p_util - epsilon)/(2*absMaxutility))
             e_q = model.addVar(vtype=GRB.BINARY, name="e_q")
-            model.addConstr(e_q >= (exchange_q_util - util[q])/absMaxutility)
-            model.addConstr(e_q <= 1 - (util[q] - exchange_q_util - epsilon)/absMaxutility)
+            model.addConstr(e_q >= (exchange_q_util - util[q])/(2*absMaxutility))
+            model.addConstr(e_q <= 1 - (util[q] - exchange_q_util - epsilon)/(2*absMaxutility))
             model.addConstr(e_p + e_q <= 1)
 
     if objective == 'MWA':
@@ -189,18 +255,6 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
     output['Solve time'] = start_solve_time
     output['Objective'] = totalUtility
     output['Nodes'] = model.nodeCount
-    for p in range(n):
-        line = ''
-        for v in range(n):
-            line += str(x[p,v].X)+','
-        print(line)
-
-    print('\n')
-
-    line = ''
-    for p in range(n):
-        line += str(util[p].X)+','
-    print(line)
     return output
 
 if __name__ == '__main__':

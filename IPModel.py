@@ -137,13 +137,13 @@ def IPModel(valFile, seatFile, utilityType, objective):
             for u in range(n):
                 neighbours = getNeighbours(u,n,seatGraph)
                 exchange_z_p = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="exchange_z_p")
-                model.addConstrs(exchange_z_p[v] == (exchange_p.sum([q for q in range(n)],u,neighbours[v])) for v in range(len(neighbours)))
+                model.addConstrs(exchange_z_p[v] == (exchange_p.sum([r for r in range(n)],u,neighbours[v])) for v in range(len(neighbours)))
                 exchange_y_p = model.addVars(len(neighbours), vtype=GRB.BINARY, name="exchange_y_p")
                 model.addConstrs(exchange_y_p[v] >= 1-(exchange_u_p[u]-exchange_z_p[v]) for v in range(len(neighbours)))
                 model.addConstrs(exchange_y_p[v] <= 1-(exchange_u_p[u]-exchange_z_p[v])/(2*absMaxValuation) for v in range(len(neighbours)))
                 model.addConstrs(exchange_u_p[u] >= exchange_z_p[v] for v in range(len(neighbours)))
                 model.addConstr(exchange_y_p.sum(v for v in range(len(neighbours))) >= 1)
-            model.addConstr(util[p] == exchange_u_p.sum(u for u in range(n)))
+            model.addConstr(exchange_p_util == exchange_u_p.sum(u for u in range(n)))
         elif utilityType == 'W':
             exchange_u_p = model.addVars(n, vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name="exchange_u_p")
             for u in range(n):
@@ -202,11 +202,11 @@ def IPModel(valFile, seatFile, utilityType, objective):
             model.addConstr(exchange_q_util <= util[q])
         else: #STA
             e_p = model.addVar(vtype=GRB.BINARY, name="e_p")
-            model.addConstr(e_p >= (exchange_p_util - util[p])/absMaxutility)
-            model.addConstr(e_p <= 1 - (util[p] - exchange_p_util - epsilon)/absMaxutility)
+            model.addConstr(e_p >= (exchange_p_util - util[p])/(2*absMaxutility))
+            model.addConstr(e_p <= 1 - (util[p] - exchange_p_util - epsilon)/(2*absMaxutility))
             e_q = model.addVar(vtype=GRB.BINARY, name="e_q")
-            model.addConstr(e_q >= (exchange_q_util - util[q])/absMaxutility)
-            model.addConstr(e_q <= 1 - (util[q] - exchange_q_util - epsilon)/absMaxutility)
+            model.addConstr(e_q >= (exchange_q_util - util[q])/(2*absMaxutility))
+            model.addConstr(e_q <= 1 - (util[q] - exchange_q_util - epsilon)/(2*absMaxutility))
             model.addConstr(e_p + e_q <= 1)
 
     if objective == 'MWA':
@@ -233,6 +233,7 @@ def IPModel(valFile, seatFile, utilityType, objective):
     output['Solve time'] = start_solve_time
     output['Objective'] = totalUtility
     output['Nodes'] = model.nodeCount
+    return output
 
 if __name__ == '__main__':
     valFile = sys.argv[1]
