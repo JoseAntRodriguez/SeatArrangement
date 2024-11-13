@@ -246,14 +246,20 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
     model.optimize()
     start_solve_time = time.time() - start_solve_time
     start_total_time = time.time() - start_total_time
-    totalUtility = 0
-    for p in range(n):
-        totalUtility += util[p].X
+    objectiveValue = 0
+    if objective == 'MWA':
+        for p in range(n):
+            objectiveValue += util[p].X
+    elif objective == 'MUA':
+        objectiveValue = minVal.X
+    else: # EFA or STA
+        if model.Status != GRB.INFEASIBLE:
+            objectiveValue = 1
     output = {}
     output['Total time'] = start_total_time
     output['Build time'] = start_build_time
     output['Solve time'] = start_solve_time
-    output['Objective'] = totalUtility
+    output['Objective'] = objectiveValue
     output['Nodes'] = model.nodeCount
     return output
 
