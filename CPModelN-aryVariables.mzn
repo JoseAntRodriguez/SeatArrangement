@@ -12,10 +12,19 @@ constraint forall(u in n)(if sum(v in n)(G[u,v]) == 0 then degree[u] = 0 else de
 
 function array[int] of int: neighbours(int: u) = [v|v in n where G[u,v] == 1];
 
-array[n] of var n:p;%permutation
-constraint alldifferent(p);
+array[n] of var n:x;%permutation
+constraint alldifferent(x);
 
-function var int: utility(int: i, int: u) = if u == 2 then degree[p[i]]*max([G[p[i],p[j]]*V[i,j] + (1-G[p[i],p[j]])*minVal | j in n]) elseif u == 3 then degree[p[i]]*min([G[p[i],p[j]]*V[i,j] + (1-G[p[i],p[j]])*maxVal | j in n]) else sum([G[p[i],p[j]]*V[i,j] | j in n]) endif;
+function var int: utility(int: u, int: uT, array[n] of var n: p) = if degree[u] == 0 then 0 elseif uT == 2 then max([G[u,v]*V[p[u],p[v]] | v in neighbours(u)]) elseif uT == 3 then min([G[u,v]*V[p[u],p[v]] | v in neighbours(u)]) else sum([G[u,v]*V[p[u],p[v]] | v in neighbours(u)]) endif;
 
-var int: goal = if objective == 1 then sum([utility(i, uType) | i in n]) else min([utility(i, uType) | i in n]) endif;
-solve ::int_search(p, first_fail, indomain_min) maximize goal;
+function var int: exchangeVariable(int: u, int: v, int: r) = if r == u then x[v] elseif r == v then x[u] else x[r] endif;
+
+function array[n] of var n: exchangeVariables(int: u, int: v) = [exchangeVariable(u,v,r)|r in n];
+
+function var 0..1: envy(int: u, int: v) = if utility(u, uType, exchangeVariables(u,v)) > utility(u, uType, x) then 1 else 0 endif;
+
+constraint if objective == 3 then forall(u in n)(forall(v in n)(envy(u,v) = 0)) endif;
+constraint if objective == 4 then forall(u in n)(forall(v in (u+1)..(k-1))(envy(u,v) + envy(v,u) <= 1)) endif;
+
+var int: goal = if objective == 1 then sum([utility(u, uType, x) | u in n]) elseif objective == 2 then min([utility(u, uType, x) | u in n]) else 0 endif;
+solve ::int_search(x, first_fail, indomain_min) maximize goal;
