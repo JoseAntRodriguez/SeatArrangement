@@ -32,7 +32,7 @@ output = np.zeros((len(sizes), len(models)))
 
 for i in range(len(sizes)):
     for j in range(len(models)):
-        output[i,j]  = np.average(data[sizes[i]][j])
+        output[i,j]  = np.average(data[sizes[i]][:,j])
 
 with open(outputFile, 'w')as f:
     header = 'sizes,'+','.join(models)+'\n'
@@ -40,7 +40,6 @@ with open(outputFile, 'w')as f:
     for i in range(len(sizes)):
         line = str(sizes[i])+','
         for j in range(len(models)):
-            output[i,j]  = np.average(data[sizes[i]][j])
             line += str(output[i,j])
             if j < len(models) - 1:
                 line += ','
