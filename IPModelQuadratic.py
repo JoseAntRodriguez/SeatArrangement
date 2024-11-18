@@ -67,6 +67,7 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
     start_build_time = start_total_time
 
     model = gp.Model("SeatArrangement")
+    model.setParam('OutputFlag', 0)
     x = model.addVars(n, n, vtype=GRB.BINARY, name="x")
     model.addConstrs(x.sum(p, [v for v in range(n)]) == 1 for p in range(n))
     model.addConstrs(x.sum([p for p in range(n)], v) == 1 for v in range(n))

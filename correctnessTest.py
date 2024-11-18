@@ -29,9 +29,9 @@ def getResultsFromCP(CPModel, valuations, seatGraph, utilityType, goal):
     output = {}
     if goal == 'STA' or goal == 'EFA':
         if result.status.has_solution():
-            output['Objective'] == 1
+            output['Objective'] = 1
         else:
-            output['Objective'] == 0
+            output['Objective'] = 0
     else:
         output['Objective'] = result['objective']
     return output
@@ -127,18 +127,18 @@ for goal in goals:
                     for model in models:
                         output = {}
                         if model == 'IP4Subscripts':
-                            output = IPModel(valuationsFilesSizeCSV[j], seatGraphFilesSizeCSV[i], goal, uType)
+                            output = IPModel(valuationsFilesSizeCSV[j], seatGraphFilesSizeCSV[i], uType, goal)
                         elif model == 'IPQuadratic':
-                            output = IPModelQuadratic(valuationsFilesSizeCSV[j], seatGraphFilesSizeCSV[i], goal, uType)
+                            output = IPModelQuadratic(valuationsFilesSizeCSV[j], seatGraphFilesSizeCSV[i], uType, goal)
                         elif model == 'CPN-ary':
-                            output = getResultsFromCP('./CPModelN-aryVariables.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i], goal, uType)
+                            output = getResultsFromCP('./CPModelN-aryVariables.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i], uType, goal)
                         elif model == 'CP4Subscripts':
-                            output = getResultsFromCP('./CPModelBinaryVariables.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i], goal, uType)
+                            output = getResultsFromCP('./CPModelBinaryVariables.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i], uType, goal)
                         elif model == 'CPQuadratic':
-                            output = getResultsFromCP('./CPModelBinaryVariablesQuadratic.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i], goal, uType)
+                            output = getResultsFromCP('./CPModelBinaryVariablesQuadratic.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i], uType, goal)
                         objectives.append(output['Objective'])
-                    for i in range(len(objectives)):
-                        if objectives[i] != objectives[0]:
+                    for k in range(len(objectives)):
+                        if objectives[k] != objectives[0]:
                             print('Instance number', i*len(seatGraphFilesSizeCSV) + j + 1, 'of size', size)
                             print(objectives)
                             break
