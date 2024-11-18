@@ -19,9 +19,9 @@ function var int: utility(int: u, int: uT, array[n] of var n: p) = if degree[u] 
 
 function var int: exchangeVariable(int: u, int: v, int: r) = if r == u then x[v] elseif r == v then x[u] else x[r] endif;
 
-function array[n] of var n: exchangeVariables(int: u, int: v) = [exchangeVariable(u,v,r)|r in n];
+function array[n] of var n: exchangeVariables(int: u, int: v) = array1d(n,[exchangeVariable(u,v,r)|r in n]);
 
-function var 0..1: envy(int: u, int: v) = if utility(u, uType, exchangeVariables(u,v)) > utility(u, uType, x) then 1 else 0 endif;
+function var 0..1: envy(int: u, int: v) = if utility(v, uType, exchangeVariables(u,v)) > utility(u, uType, x) then 1 else 0 endif;
 
 constraint if objective == 3 then forall(u in n)(forall(v in n)(envy(u,v) = 0)) endif;
 constraint if objective == 4 then forall(u in n)(forall(v in (u+1)..(k-1))(envy(u,v) + envy(v,u) <= 1)) endif;
