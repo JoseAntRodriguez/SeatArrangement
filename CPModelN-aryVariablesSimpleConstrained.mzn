@@ -19,7 +19,7 @@ constraint forall(i in n)(utility(i) <= 2);
 constraint forall(i in n)(utility(i) >= 0);
 %constraint forall(u in 1..(k-1))(if G[u,u-1] == 0 then forall(v in connectedComponent(u))(q[u] < q[v]) endif);
 % In every connected component, the "smallest" agent goes in the "smallest" vertex
-constraint forall(u in 1..(k-1))(if G[u,0] > u then forall(v in (u+1)..(G[u,1]))(q[u] < q[v]) endif);
+constraint forall(u in 0..(k-2))(if G[u,0] > u then forall(v in (u+1)..(G[u,1]))(q[u] < q[v]) endif);
 %constraint forall(u in 1..(k-1))(if G[u,0] > u then q[u+1] < q[G[u,1]] endif); % Test with this constraint
 
 solve ::int_search(q, first_fail, indomain_min) maximize sum([utility(i) | i in n]);

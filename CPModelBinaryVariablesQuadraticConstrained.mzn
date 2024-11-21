@@ -29,7 +29,7 @@ constraint forall(p in n)(utility(p, uType, x) <= 2);
 constraint forall(p in n)(utility(p, uType, x) >= 0);
 
 function array[int] of int:connectedComponent(int: u) = [v|v in (u+1)..(k-1) where sum(w in u..v)(G[w,v]) >= 1];
-constraint forall(u in 1..(k-1))(if G[u,0] > u then forall(v in (u+1)..(G[u,1]))(forall(p in n)(if x[p,u] == 1 then forall(q in 0..(p-1))(x[q,v]=0) endif)) endif);
+constraint forall(u in 0..(k-2))(if G[u,0] > u then forall(v in (u+1)..(G[u,1]))(forall(p in n)(if x[p,u] == 1 then forall(q in 0..(p-1))(x[q,v]=0) endif)) endif);
 
 var int: goal = if objective == 1 then sum([utility(u, uType, x) | u in n]) elseif objective == 2 then min([utility(u, uType, x) | u in n]) else 0 endif;
 solve ::int_search(x, first_fail, indomain_min) maximize goal;
