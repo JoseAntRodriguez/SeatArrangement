@@ -69,22 +69,26 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
     model = gp.Model("SeatArrangement")
     model.setParam('OutputFlag', 0)
     x = model.addVars(n, n, vtype=GRB.BINARY, name="x")
+    x.BranchPriority = 100
     model.addConstrs(x.sum(p, [v for v in range(n)]) == 1 for p in range(n))
     model.addConstrs(x.sum([p for p in range(n)], v) == 1 for v in range(n))
 
     # uv stands for utility at vertex
     uv = model.addVars(n, n, vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name="uv")
+    uv.BranchPriority = -10
     for p in range(n):
         for u in range(n):
             if utilityType == 'B':
                 neighbours = getNeighbours(u,n,seatGraph)
                 z_p = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_p")
+                z_p.BranchPriority = -10
                 for v in range(len(neighbours)):
                     totalSum = 0
                     for q in range(n):
                         totalSum += valuations[p][q]*x[q,neighbours[v]]
                     model.addConstr(z_p[v] == totalSum)
                 y_p = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_p")
+                y_p.BranchPriority = -10
                 model.addConstrs(y_p[v] >= 1-(uv[p,u]-z_p[v]) for v in range(len(neighbours)))
                 model.addConstrs(y_p[v] <= 1-(uv[p,u]-z_p[v])/(2*absMaxValuation) for v in range(len(neighbours)))
                 model.addConstrs(uv[p,u] >= z_p[v] for v in range(len(neighbours)))
@@ -92,12 +96,14 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
             elif utilityType == 'W':
                 neighbours = getNeighbours(u,n,seatGraph)
                 z_p = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_p")
+                z_p.BranchPriority = -10
                 for v in range(len(neighbours)):
                     totalSum = 0
                     for q in range(n):
                         totalSum += valuations[p][q]*x[q,neighbours[v]]
                     model.addConstr(z_p[v] == totalSum)
                 y_p = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_p")
+                y_p.BranchPriority = -10
                 model.addConstrs(y_p[v] >= 1-(z_p[v]-uv[p,u]) for v in range(len(neighbours)))
                 model.addConstrs(y_p[v] <= 1-(z_p[v]-uv[p,u])/(2*absMaxValuation) for v in range(len(neighbours)))
                 model.addConstrs(uv[p,u] <= z_p[v] for v in range(len(neighbours)))
@@ -110,16 +116,20 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
                 model.addConstr(uv[p,u] == utility)
 
     util = model.addVars(n, vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name="u")
+    util.BranchPriority = -10
     for p in range(n):
         model.addConstr(util[p] == sum(uv[p,u]*x[p,u] for u in range(n)))
 
     def envyFreenessStability(p,q):
         exchange_p = model.addVars(n, vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name="exchange_p-"+str(p)+"-"+str(q))
+        exchange_p.BranchPriority = -10
         exchange_p_util = model.addVar(vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name='exchange_p_util')
+        exchange_p_util.BranchPriority = -10
         if utilityType == 'B':
             for u in range(n):
                 neighbours = getNeighbours(u,n,seatGraph)
                 z_p_exchange = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_p_exchange")
+                z_p_exchange.BranchPriority = -10
                 for v in range(len(neighbours)):
                     utility_v = 0
                     for r in range(n):
@@ -131,6 +141,7 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
                             utility_v += x[r,neighbours[v]]*valuations[p][r]
                     model.addConstr(z_p_exchange[v] == utility_v)
                 y_p_exchange = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_p_exchange")
+                y_p_exchange.BranchPriority = -10
                 model.addConstrs(y_p_exchange[v] >= 1-(exchange_p[u]-z_p_exchange[v]) for v in range(len(neighbours)))
                 model.addConstrs(y_p_exchange[v] <= 1-(exchange_p[u]-z_p_exchange[v])/(2*absMaxValuation) for v in range(len(neighbours)))
                 model.addConstrs(exchange_p[u] >= z_p_exchange[v] for v in range(len(neighbours)))
@@ -139,6 +150,7 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
             for u in range(n):
                 neighbours = getNeighbours(u,n,seatGraph)
                 z_p_exchange = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_p_exchange")
+                z_p_exchange.BranchPriority = -10
                 for v in range(len(neighbours)):
                     utility_v = 0
                     for r in range(n):
@@ -150,6 +162,7 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
                             utility_v += x[r,neighbours[v]]*valuations[p][r]
                     model.addConstr(z_p_exchange[v] == utility_v)
                 y_p_exchange = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_p_exchange")
+                y_p_exchange.BranchPriority = -10
                 model.addConstrs(y_p_exchange[v] >= 1-(z_p_exchange[v]-exchange_p[u]) for v in range(len(neighbours)))
                 model.addConstrs(y_p_exchange[v] <= 1-(z_p_exchange[v]-exchange_p[u])/(2*absMaxValuation) for v in range(len(neighbours)))
                 model.addConstrs(exchange_p[u] <= z_p_exchange[v] for v in range(len(neighbours)))
@@ -168,11 +181,14 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
                 model.addConstr(exchange_p[u] == utility_v)
         model.addConstr(exchange_p_util == sum(exchange_p[u]*x[q,u] for u in range(n)))
         exchange_q = model.addVars(n, vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name="exchange_q")
+        exchange_q.BranchPriority = -10
         exchange_q_util = model.addVar(vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name='exchange_q_util')
+        exchange_q_util.BranchPriority = -10
         if utilityType == 'B':
             for u in range(n):
                 neighbours = getNeighbours(u,n,seatGraph)
                 z_q_exchange = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_q_exchange")
+                z_q_exchange.BranchPriority = -10
                 for v in range(len(neighbours)):
                     utility_v = 0
                     for r in range(n):
@@ -184,6 +200,7 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
                             utility_v += x[r,neighbours[v]]*valuations[q][r]
                     model.addConstr(z_q_exchange[v] == utility_v)
                 y_q_exchange = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_q_exchange")
+                y_q_exchange.BranchPriority = -10
                 model.addConstrs(y_q_exchange[v] >= 1-(exchange_q[u]-z_q_exchange[v]) for v in range(len(neighbours)))
                 model.addConstrs(y_q_exchange[v] <= 1-(exchange_q[u]-z_q_exchange[v])/(2*absMaxValuation) for v in range(len(neighbours)))
                 model.addConstrs(exchange_q[u] >= z_q_exchange[v] for v in range(len(neighbours)))
@@ -192,6 +209,7 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
             for u in range(n):
                 neighbours = getNeighbours(u,n,seatGraph)
                 z_q_exchange = model.addVars(len(neighbours), vtype=GRB.INTEGER, lb=minValuation, ub=maxValuation, name="z_q_exchange")
+                z_q_exchange.BranchPriority = -10
                 for v in range(len(neighbours)):
                     utility_v = 0
                     for r in range(n):
@@ -203,6 +221,7 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
                             utility_v += x[r,neighbours[v]]*valuations[q][r]
                     model.addConstr(z_q_exchange[v] == utility_v)
                 y_q_exchange = model.addVars(len(neighbours), vtype=GRB.BINARY, name="y_q_exchange")
+                y_q_exchange.BranchPriority = -10
                 model.addConstrs(y_q_exchange[v] >= 1-(z_q_exchange[v]-exchange_q[u]) for v in range(len(neighbours)))
                 model.addConstrs(y_q_exchange[v] <= 1-(z_q_exchange[v]-exchange_q[u])/(2*absMaxValuation) for v in range(len(neighbours)))
                 model.addConstrs(exchange_q[u] <= z_q_exchange[v] for v in range(len(neighbours)))
@@ -225,9 +244,11 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
             model.addConstr(exchange_q_util <= util[q])
         else: #STA
             e_p = model.addVar(vtype=GRB.BINARY, name="e_p")
+            e_p.BranchPriority = -10
             model.addConstr(e_p >= (exchange_p_util - util[p])/(2*absMaxutility))
             model.addConstr(e_p <= 1 - (util[p] - exchange_p_util - epsilon)/(2*absMaxutility))
             e_q = model.addVar(vtype=GRB.BINARY, name="e_q")
+            e_q.BranchPriority = -10
             model.addConstr(e_q >= (exchange_q_util - util[q])/(2*absMaxutility))
             model.addConstr(e_q <= 1 - (util[q] - exchange_q_util - epsilon)/(2*absMaxutility))
             model.addConstr(e_p + e_q <= 1)
@@ -236,6 +257,7 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
         model.setObjective(util.sum(p for p in range(n)), GRB.MAXIMIZE)
     elif objective == 'MUA':
         minVal = model.addVar(vtype=GRB.INTEGER, lb=minUtility, ub=maxUtility, name="minVal")
+        minVal.BranchPriority = -10
         model.addConstrs(minVal <= util[p] for p in range(n))
         model.setObjective(minVal, GRB.MAXIMIZE)
     else: # EFA or STA
