@@ -29,30 +29,6 @@ def createCycleGraph(n):
         del vertices[:len(cycleVertices)]
     return graph
 
-'''
-def createCycleGraphAlternative(n):
-    vertices = [i for i in range(n)]
-    graph = np.zeros((n,2))
-    while len(vertices) > 0:
-        cycleVertices = []
-        if len(vertices) <= 5:
-            cycleVertices = vertices
-        else:
-            validNumberVertices = [i for i in range(3,len(vertices)-2)]
-            validNumberVertices.append(len(vertices))
-            nVertices = random.sample(validNumberVertices,1)[0]
-            cycleVertices = vertices[:nVertices]
-        graph[cycleVertices[0]][0] = cycleVertices[1]
-        graph[cycleVertices[0]][1] = cycleVertices[len(cycleVertices)-1]
-        graph[cycleVertices[len(cycleVertices)-1]][0] = cycleVertices[len(cycleVertices)-2]
-        graph[cycleVertices[len(cycleVertices)-1]][1] = cycleVertices[0]
-        for i in range(1,len(cycleVertices)-1):
-            graph[cycleVertices[i]][0] = cycleVertices[i-1]
-            graph[cycleVertices[i]][1] = cycleVertices[i+1]
-        del vertices[:len(cycleVertices)]
-    return graph
-'''
-
 def createCycleGraphAlternative(graph):
     n = graph.shape[0]
     graphAlternative = np.zeros((n,2))
@@ -96,30 +72,31 @@ def createRandomGraph(n):
 def main(n, filename, options):
     graph = createGraph(n,options)
 
-    with open(filename+'.csv', 'w') as f:
-        for i in range(n):
-            line = ''
-            for j in range(n):
-                line += str(int(graph[i][j]))
-                if j < n-1:
+    if 'alternative' not in options:
+        with open(filename+'.csv', 'w') as f:
+            for i in range(n):
+                line = ''
+                for j in range(n):
+                    line += str(int(graph[i][j]))
+                    if j < n-1:
+                        line += ','
+                if i < n-1:
+                    line += '\n'
+                f.write(line)
+        
+        with open(filename+'.dzn', 'w') as f:
+            f.write('G = array2d(n,n,[')
+            for i in range(n):
+                line = ''
+                for j in range(n):
+                    line += str(int(graph[i][j]))
                     line += ','
-            if i < n-1:
-                line += '\n'
-            f.write(line)
+                f.write(line)
+            f.write(']);')
     
-    with open(filename+'.dzn', 'w') as f:
-        f.write('G = array2d(n,n,[')
-        for i in range(n):
-            line = ''
-            for j in range(n):
-                line += str(int(graph[i][j]))
-                line += ','
-            f.write(line)
-        f.write(']);')
-    
-    if 'cycle' in options:
+    if 'cycle' in options and 'alternative' in options:
         graphAlternative = createCycleGraphAlternative(graph)
-        with open(filename+'Alternative.csv', 'w') as f:
+        with open(filename+'_Alternative.csv', 'w') as f:
             for i in range(n):
                 line = ''
                 for j in range(2):
@@ -130,7 +107,7 @@ def main(n, filename, options):
                     line += '\n'
                 f.write(line)
         
-        with open(filename+'Alternative.dzn', 'w') as f:
+        with open(filename+'_Alternative.dzn', 'w') as f:
             f.write('G = array2d(n,0..1,[')
             for i in range(n):
                 line = ''
