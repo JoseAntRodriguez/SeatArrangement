@@ -1,18 +1,32 @@
 from minizinc import Instance, Model, Solver
 from bruteForce import bruteForce
-from IPModelSimple import IPModelSimple
-from IPModelQuadraticSimple import IPModelQuadraticSimple
+from IPModelConstrained import IPModel
+from IPModelQuadraticConstrained import IPModelQuadratic
 from os import listdir
 import numpy as np
 import time
 
-def getResultsFromCP(CPModel, valuations, seatGraph):
+def getResultsFromCP(CPModel, valuations, seatGraph, utilityType, goal):
     model = Model(CPModel)
     model.add_file(valuations)
     model.add_file(seatGraph)
 
     gecode = Solver.lookup('gecode')
     instance = Instance(gecode, model)
+    if utilityType == 'B':
+        instance["uType"] = 2
+    elif utilityType == 'W':
+        instance["uType"] = 3
+    else:
+        instance["uType"] = 1
+    if goal == 'MWA':
+        instance["objective"] = 1
+    elif goal == 'MUA':
+        instance["objective"] = 2
+    elif goal == 'EFA':
+        instance["objective"] = 3
+    else:
+        instance["objective"] = 4
     start_total_time = time.time()
     result = instance.solve()
     start_total_time = time.time() - start_total_time
@@ -20,7 +34,13 @@ def getResultsFromCP(CPModel, valuations, seatGraph):
     output['Total time'] = start_total_time
     output['Build time'] = 0
     output['Solve time'] = start_total_time
-    output['Objective'] = result['objective']
+    if goal == 'STA' or goal == 'EFA':
+        if result.status.has_solution():
+            output['Objective'] = 1
+        else:
+            output['Objective'] = 0
+    else:
+        output['Objective'] = result['objective']
     output['Nodes'] = result.statistics['nodes']
     output['Peak depth'] = result.statistics['peakDepth']
     return output
@@ -65,7 +85,9 @@ def writeFile(models, filename, data, instancesNumber):
 seatGraphDirectory = 'Instances/ArbitraryGraphs/'
 valuationsDirectory = 'Instances/ArbitraryValuations/'
 resultsDirectory = 'Results/'
-models = ['bruteForce','IP4Subscripts','IPQuadratic','CPN-ary','CP4Subscripts','CPQuadratic']
+models = ['IP4Subscripts','IPQuadratic','CPN-ary','CP4Subscripts','CPQuadratic']
+goals = ['MWA', 'MUA', 'EFA', 'STA']
+uTypes = ['B', 'S', 'W']
 
 seatGraphFiles = listdir(seatGraphDirectory)
 valuationsFiles = listdir(valuationsDirectory)
@@ -86,74 +108,78 @@ for size in sizes:
 
     instancesNumber = len(seatGraphFilesSizeCSV)*len(valuationsFilesSizeCSV)
 
-    objectiveArray = []
-    totalTimeDict = {}
-    for model in models:
-        totalTimeDict[model] = []
-    buildTimeDict = {}
-    for model in models:
-        buildTimeDict[model] = []
-    solveTimeDict = {}
-    for model in models:
-        solveTimeDict[model] = []
-    nodesDict = {}
-    for model in models:
-        if 'CP' in model or 'IP' in model:
-            nodesDict[model] = []
-    peakDepthDict = {}
-    for model in models:
-        if 'CP' in model:
-            peakDepthDict[model] = []
-    
-    for i in range(len(seatGraphFilesSizeCSV)):
-        for j in range(len(valuationsFilesSizeCSV)):
-            print('Instance number', i*len(seatGraphFilesSizeCSV) + j + 1, 'of size', size)
+    for goal in goals:
+        for uType in uTypes:
+            objectiveArray = []
+            totalTimeDict = {}
             for model in models:
-                output = {}
-                if model == 'bruteForce':
-                    output = bruteForce(valuationsFilesSizeCSV[j], seatGraphFilesSizeCSV[i])
-                elif model == 'IP4Subscripts':
-                    output = IPModelSimple(valuationsFilesSizeCSV[j], seatGraphFilesSizeCSV[i])
-                elif model == 'IPQuadratic':
-                    output = IPModelQuadraticSimple(valuationsFilesSizeCSV[j], seatGraphFilesSizeCSV[i])
-                elif model == 'CPN-ary':
-                    output = getResultsFromCP('./CPModelN-aryVariablesSimple.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i])
-                elif model == 'CP4Subscripts':
-                    output = getResultsFromCP('./CPModelBinaryVariablesSimple.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i])
-                elif model == 'CPQuadratic':
-                    output = getResultsFromCP('./CPModelBinaryVariablesQuadraticSimple.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i])
-                totalTimeDict[model].append(output['Total time'])
-                buildTimeDict[model].append(output['Build time'])
-                solveTimeDict[model].append(output['Solve time'])
+                totalTimeDict[model] = []
+            buildTimeDict = {}
+            for model in models:
+                buildTimeDict[model] = []
+            solveTimeDict = {}
+            for model in models:
+                solveTimeDict[model] = []
+            nodesDict = {}
+            for model in models:
                 if 'CP' in model or 'IP' in model:
-                    nodesDict[model].append(output['Nodes'])
+                    nodesDict[model] = []
+            peakDepthDict = {}
+            for model in models:
                 if 'CP' in model:
-                    peakDepthDict[model].append(output['Peak depth'])
-                if len(objectiveArray) < len(seatGraphFilesSizeCSV)*i + (j+1):
-                    objectiveArray.append(output['Objective'])
-    
-    objectiveFilename = 'Results_'+size+'_ObjectiveValue_MWA_S.csv'
-    with open(resultsDirectory+objectiveFilename, 'w') as f:
-        content = ''
-        for i in range(instancesNumber):
-            content += str(objectiveArray[i])
-            if i < instancesNumber - 1:
-                content += ','
-        f.write(content)
-    
-    totalTimeFilename = resultsDirectory+'Results_'+size+'_TotalTime_MWA_S.csv'
-    writeFile(models, totalTimeFilename, totalTimeDict, instancesNumber)
+                    peakDepthDict[model] = []
+            
+            for i in range(len(seatGraphFilesSizeCSV)):
+                for j in range(len(valuationsFilesSizeCSV)):
+                    print('Instance number', i*len(seatGraphFilesSizeCSV) + j + 1, 'of size', size)
+                    for model in models:
+                        output = {}
+                        if model == 'bruteForce': # Only works for S-utility and MWA
+                            output = bruteForce(valuationsFilesSizeCSV[j], seatGraphFilesSizeCSV[i])
+                        elif model == 'IP4Subscripts':
+                            output = IPModel(valuationsFilesSizeCSV[j], seatGraphFilesSizeCSV[i], uType, goal)
+                        elif model == 'IPQuadratic':
+                            output = IPModelQuadratic(valuationsFilesSizeCSV[j], seatGraphFilesSizeCSV[i], uType, goal)
+                        elif model == 'CPN-ary':
+                            output = getResultsFromCP('./CPModelN-aryVariablesConstrained.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i], uType, goal)
+                        elif model == 'CP4Subscripts':
+                            output = getResultsFromCP('./CPModelBinaryVariablesConstrained.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i], uType, goal)
+                        elif model == 'CPQuadratic':
+                            output = getResultsFromCP('./CPModelBinaryVariablesQuadraticConstrained.mzn', valuationsFilesSizeDZN[j], seatGraphFilesSizeDZN[i], uType, goal)
+                        totalTimeDict[model].append(output['Total time'])
+                        buildTimeDict[model].append(output['Build time'])
+                        solveTimeDict[model].append(output['Solve time'])
+                        if 'CP' in model or 'IP' in model:
+                            nodesDict[model].append(output['Nodes'])
+                        if 'CP' in model:
+                            peakDepthDict[model].append(output['Peak depth'])
+                        if len(objectiveArray) < len(seatGraphFilesSizeCSV)*i + (j+1):
+                            objectiveArray.append(output['Objective'])
+            
+            lastPartOfFilename = goal + '_' + 'uType' + '.csv'
 
-    buildTimeFilename = resultsDirectory+'Results_'+size+'_BuildTime_MWA_S.csv'
-    writeFile(models, buildTimeFilename, buildTimeDict, instancesNumber)
+            objectiveFilename = 'Results_'+size+'_ObjectiveValue_'+lastPartOfFilename
+            with open(resultsDirectory+objectiveFilename, 'w') as f:
+                content = ''
+                for i in range(instancesNumber):
+                    content += str(objectiveArray[i])
+                    if i < instancesNumber - 1:
+                        content += ','
+                f.write(content)
+            
+            totalTimeFilename = resultsDirectory+'Results_'+size+'_TotalTime_'+lastPartOfFilename
+            writeFile(models, totalTimeFilename, totalTimeDict, instancesNumber)
 
-    solveTimeFilename = resultsDirectory+'Results_'+size+'_SolveTime_MWA_S.csv'
-    writeFile(models, solveTimeFilename, solveTimeDict, instancesNumber)
+            buildTimeFilename = resultsDirectory+'Results_'+size+'_BuildTime_'+lastPartOfFilename
+            writeFile(models, buildTimeFilename, buildTimeDict, instancesNumber)
 
-    cpIpModels = [model for model in models if 'CP' in model or 'IP' in model]
-    nodesFilename = resultsDirectory+'Results_'+size+'_Nodes_MWA_S.csv'
-    writeFile(cpIpModels, nodesFilename, nodesDict, instancesNumber)
+            solveTimeFilename = resultsDirectory+'Results_'+size+'_SolveTime_'+lastPartOfFilename
+            writeFile(models, solveTimeFilename, solveTimeDict, instancesNumber)
 
-    cpModels = [model for model in models if 'CP' in model]
-    peakDepthFilename = resultsDirectory+'Results_'+size+'_PeakDepth_MWA_S.csv'
-    writeFile(cpModels, peakDepthFilename, peakDepthDict, instancesNumber)
+            cpIpModels = [model for model in models if 'CP' in model or 'IP' in model]
+            nodesFilename = resultsDirectory+'Results_'+size+'_Nodes_'+lastPartOfFilename
+            writeFile(cpIpModels, nodesFilename, nodesDict, instancesNumber)
+
+            cpModels = [model for model in models if 'CP' in model]
+            peakDepthFilename = resultsDirectory+'Results_'+size+'_PeakDepth_'+lastPartOfFilename
+            writeFile(cpModels, peakDepthFilename, peakDepthDict, instancesNumber)
