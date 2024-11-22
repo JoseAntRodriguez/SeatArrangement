@@ -25,7 +25,7 @@ constraint if objective == 3 then forall(u in n)(forall(v in n)(envy(u,v) = 0)) 
 constraint if objective == 4 then forall(u in n)(forall(v in (u+1)..(k-1))(envy(u,v) + envy(v,u) <= 1)) endif;
 
 % New constraints to account for the fact that valuations are binary and the seat graph is a cycle seat graph
-constraint forall(u in n)(utility(u, uType, x) <= 2);
+constraint forall(u in n)(if uType == 1 then utility(u, uType, x) <= 2 else utility(u, uType, x) <= 1 endif);
 constraint forall(u in n)(utility(u, uType, x) >= 0);
 
 function array[int] of int:connectedComponent(int: u) = [v|v in (u+1)..(k-1) where sum(w in u..v)(G[w,v]) >= 1];
