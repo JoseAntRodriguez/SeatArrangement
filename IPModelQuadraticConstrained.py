@@ -224,8 +224,8 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
     # New constraints to account for the fact that valuations are binary and the seat graph is a cycle seat graph
     for u in range(n-1):
         if seatGraph[u][0] > u:
-            for v in range(seatGraph[u][0], seatGraph[u][1]+1):
-                model.addConstrs(x.sum([q for q in range(p)], v) < x[p,u] + 2*(1-x[p,u]) for p in range(n))
+            for v in range(int(seatGraph[u][0]), int(seatGraph[u][1]+1)):
+                model.addConstrs(x.sum([q for q in range(p)], v) <= x[p,u] + 2*(1-x[p,u]) - epsilon for p in range(n))
 
     if objective == 'MWA':
         model.setObjective(util.sum(p for p in range(n)), GRB.MAXIMIZE)

@@ -11,7 +11,7 @@ array[n,n] of var 0..1:x;
 constraint forall(p in n)(sum(u in n)(x[p,u]) = 1);
 constraint forall(u in n)(sum(p in n)(x[p,u]) = 1);
 
-function var int: utilityAtVertex(int: p, int: u, int: uT, array[n,n] of var n: z) = if uT == 2 then max(sum(q in n)(z[q,G[u,0]]*V[p,q]), sum(q in n)(z[q,G[u,0]]*V[p,q])) elseif uT == 3 then min(sum(q in n)(z[q,G[u,0]]*V[p,q]), sum(q in n)(z[q,G[u,0]]*V[p,q])) else sum(q in n)(z[q,G[u,0]]*V[p,q] + z[q,G[u,1]]*V[p,q]) endif;
+function var int: utilityAtVertex(int: p, int: u, int: uT, array[n,n] of var n: z) = if uT == 2 then max(sum(q in n)(z[q,G[u,0]]*V[p,q]), sum(q in n)(z[q,G[u,1]]*V[p,q])) elseif uT == 3 then min(sum(q in n)(z[q,G[u,0]]*V[p,q]), sum(q in n)(z[q,G[u,1]]*V[p,q])) else sum(q in n)(z[q,G[u,0]]*V[p,q] + z[q,G[u,1]]*V[p,q]) endif;
 
 function var int: utility(int: p, int: uT, array[n,n] of var n: z) = sum(u in n)(utilityAtVertex(p,u,uT,z)*z[p,u]);
 

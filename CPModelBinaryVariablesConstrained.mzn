@@ -7,14 +7,12 @@ int: objective; % 1 if MWA, 2 if MUA, 3 if EFA, 4 if STA
 int: minVal = min(p in n, q in n)(V[p,q]);
 int: maxVal = max(p in n, q in n)(V[p,q]);
 
-function int: neighbours(int: u, int: v) = if G[u,0] == v \/ G[u,1] == v then 1 else 0 endif;
-
 array[n,n] of var 0..1:x;
 constraint forall(p in n)(sum(u in n)(x[p,u]) = 1);
 constraint forall(u in n)(sum(p in n)(x[p,u]) = 1);
 
 array[n,n,n,n] of var 0..1:y;
-constraint forall(p in n, q in n, u in n, v in n) (y[p,q,u,v] == if x[p,u] + x[q,v] == 2 then neighbours(u,v) else 0 endif);
+constraint forall(p in n, q in n, u in n, v in n) (y[p,q,u,v] == if x[p,u] + x[q,v] == 2 then 1 else 0 endif);
 
 function var int: utilityAtVertex(int: p, int: u, int: uT, array[n,n,n,n] of var 0..1:z) = if uT == 2 then max(sum(q in n)(z[p,q,u,G[u,0]]*V[p,q]), sum(q in n)(z[p,q,u,G[u,1]]*V[p,q])) elseif uT == 3 then min(sum(q in n)(z[p,q,u,G[u,0]]*V[p,q]), sum(q in n)(z[p,q,u,G[u,1]]*V[p,q])) else sum(q in n)(z[p,q,u,G[u,0]]*V[p,q]) + sum(q in n)(z[p,q,u,G[u,1]]*V[p,q]) endif;
 

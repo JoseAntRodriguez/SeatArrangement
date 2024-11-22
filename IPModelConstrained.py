@@ -5,20 +5,23 @@ import numpy as np
 import time
 
 
-def readFile(filename):
+def readFile(filename, seatGraph=False):
     with open(filename, 'r') as f:
         content = f.read().splitlines()
         size = len(content)
         inputArray = np.zeros((size,size))
         for i in range(size):
             values = content[i].split(',')
-            for j in range(size):
+            size2 = size
+            if seatGraph:
+                size2 = 2
+            for j in range(size2):
                 inputArray[i][j] = int(values[j])
         return inputArray
 
 def IPModel(valFile, seatFile, utilityType, objective):
-    valuations = readFile(valFile)
-    seatGraph = readFile(seatFile)
+    valuations = readFile(valFile, False)
+    seatGraph = readFile(seatFile, True)
 
     n = len(valuations)
     maxUtility = 2
@@ -42,9 +45,9 @@ def IPModel(valFile, seatFile, utilityType, objective):
         for q in range(n):
             for u in range(n):
                 for v in range(n):
-                    model.addConstr(y[p,q,u,v] >= (x[p,u] + x[q,v] - 1)*seatGraph[u][v])
-                    model.addConstr(y[p,q,u,v] <= x[p,u]*seatGraph[u][v])
-                    model.addConstr(y[p,q,u,v] <= x[q,v]*seatGraph[u][v])
+                    model.addConstr(y[p,q,u,v] >= x[p,u] + x[q,v] - 1)
+                    model.addConstr(y[p,q,u,v] <= x[p,u])
+                    model.addConstr(y[p,q,u,v] <= x[q,v])
 
     # Need to add z matrix because if both x[p,u] and x[q,v], and valuations[p][q] is negative, then the first
     # constraint says that y[p,q,u,v] must be greater than -valuations[p][q] (a positive number), while the
@@ -89,8 +92,10 @@ def IPModel(valFile, seatFile, utilityType, objective):
                 model.addConstr(y_p.sum(v for v in range(2)) >= 1)
             model.addConstr(util[p] == u_p.sum(u for u in range(n)))
         else: # S-utility
-            model.addConstr(util[p] == z.sum(p, [q for q in range(n)], [u for u in range(n)], seatGraph[u][0]) +
-                            z.sum(p, [q for q in range(n)], [u for u in range(n)], seatGraph[u][1]))
+            util_u = model.addVars(n, vtype=GRB.INTEGER, lb=0, ub=maxUtility, name="util_u")
+            model.addConstrs(util_u[u] == z.sum(p, [q for q in range(n)], u, seatGraph[u][0]) +
+                            z.sum(p, [q for q in range(n)], u, seatGraph[u][1]) for u in range(n))
+            model.addConstr(util[p] == util_u.sum([u for u in range(n)]))
         # New constraints to account for the fact that valuations are binary and the seat graph is a cycle seat graph
         model.addConstr(util[p] >= 0)
         model.addConstr(util[p] <= maxUtility)
@@ -142,8 +147,10 @@ def IPModel(valFile, seatFile, utilityType, objective):
                 model.addConstr(exchange_y_p.sum(v for v in range(2)) >= 1)
             model.addConstr(exchange_p_util == exchange_u_p.sum(u for u in range(n)))
         else: # S-utility
-            model.addConstr(exchange_p_util == exchange_p.sum([r for r in range(n)], [u for u in range(n)], seatGraph[u][0]) +
-                            exchange_p.sum([r for r in range(n)], [u for u in range(n)], seatGraph[u][1]))
+            exchange_p_util_u = model.addVars(n, vtype=GRB.INTEGER, lb=0, ub=maxUtility, name="exchange_p_util_u")
+            model.addConstrs(exchange_p_util_u[u] == exchange_p.sum([r for r in range(n)], u, seatGraph[u][0]) +
+                            exchange_p.sum([r for r in range(n)], u, seatGraph[u][1]))
+            model.addConstr(exchange_p_util == exchange_p_util_u.sum([u for u in range(n)]))
         
         name1 = "exchange_q_"+str(q)
         exchange_q = model.addVars(n, n, n, vtype=GRB.BINARY, name=name1)
@@ -191,8 +198,10 @@ def IPModel(valFile, seatFile, utilityType, objective):
                 model.addConstr(exchange_y_q.sum(v for v in range(2)) >= 1)
             model.addConstr(exchange_q_util == exchange_u_q.sum(u for u in range(n)))
         else: # S-utility
-            model.addConstr(exchange_q_util == exchange_q.sum([r for r in range(n)], [u for u in range(n)], seatGraph[u][0]) +
-                            exchange_q.sum([r for r in range(n)], [u for u in range(n)], seatGraph[u][1]))
+            exchange_q_util_u = model.addVars(n, vtype=GRB.INTEGER, lb=0, ub=maxUtility, name="exchange_q_util_u")
+            model.addConstrs(exchange_q_util_u[u] == exchange_q.sum([r for r in range(n)], u, seatGraph[u][0]) +
+                            exchange_q.sum([r for r in range(n)], u, seatGraph[u][1]))
+            model.addConstr(exchange_q_util == exchange_q_util_u.sum([u for u in range(n)]))
         if objective == 'EFA':
             model.addConstr(exchange_p_util <= util[p])
             model.addConstr(exchange_q_util <= util[q])
@@ -210,8 +219,8 @@ def IPModel(valFile, seatFile, utilityType, objective):
     # New constraints to account for the fact that valuations are binary and the seat graph is a cycle seat graph
     for u in range(n-1):
         if seatGraph[u][0] > u:
-            for v in range(seatGraph[u][0], seatGraph[u][1]+1):
-                model.addConstrs(x.sum([q for q in range(p)], v) < x[p,u] + 2*(1-x[p,u]) for p in range(n))
+            for v in range(int(seatGraph[u][0]), int(seatGraph[u][1]+1)):
+                model.addConstrs(x.sum([q for q in range(p)], v) <= x[p,u] + 2*(1-x[p,u]) - epsilon for p in range(n))
 
     if objective == 'MWA':
         model.setObjective(util.sum(p for p in range(n)), GRB.MAXIMIZE)
