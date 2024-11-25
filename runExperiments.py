@@ -82,9 +82,9 @@ def writeFile(models, filename, data, instancesNumber):
                     line += '\n'
             f.write(line)
 
-seatGraphDirectory = 'Instances/ArbitraryGraphs/'
-valuationsDirectory = 'Instances/ArbitraryValuations/'
-resultsDirectory = 'Results/'
+seatGraphDirectory = 'Instances/CycleGraphsAlternative/'
+valuationsDirectory = 'Instances/BinaryValuations/'
+resultsDirectory = 'Results/ResultsRestricted/'
 models = ['IP4Subscripts','IPQuadratic','CPN-ary','CP4Subscripts','CPQuadratic']
 goals = ['MWA', 'MUA', 'EFA', 'STA']
 uTypes = ['B', 'S', 'W']
@@ -156,7 +156,7 @@ for size in sizes:
                         if len(objectiveArray) < len(seatGraphFilesSizeCSV)*i + (j+1):
                             objectiveArray.append(output['Objective'])
             
-            lastPartOfFilename = goal + '_' + 'uType' + '.csv'
+            lastPartOfFilename = goal + '_' + uType + '.csv'
 
             objectiveFilename = 'Results_'+size+'_ObjectiveValue_'+lastPartOfFilename
             with open(resultsDirectory+objectiveFilename, 'w') as f:
