@@ -208,6 +208,11 @@ def IPModelQuadratic(valFile, seatFile, utilityType, objective):
         if seatGraph[u][0] > u:
             for v in range(int(seatGraph[u][0]), int(seatGraph[u][1]+1)):
                 model.addConstrs(x.sum([q for q in range(p)], v) <= x[p,u] + 2*(1-x[p,u]) - epsilon for p in range(n))
+    
+    for u in range(n-1):
+        if seatGraph[u][0] > u:
+            model.addConstrs(x.sum([q for q in range(p)], int(seatGraph[u][1])) <=
+                             x[p,int(seatGraph[u][0])] + 2*(1-x[p,int(seatGraph[u][0])]) - epsilon for p in range(n))
 
     if objective == 'MWA':
         model.setObjective(util.sum(p for p in range(n)), GRB.MAXIMIZE)
